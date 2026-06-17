@@ -19,16 +19,20 @@ A dual-domain time series project - same methodology applied to real Kaggle reta
 
 ## Key findings
 
-- **Oil price correlates with grocery sales at r = −0.47**
+- **Oil price correlates with grocery sales at r = −0.47:**
+
 Ecuador is an oil-export economy. When global oil prices fall, government revenue drops, social spending gets cut, and consumers buy less. Found during EDA before any modelling - the kind of macro reasoning that matters in FinTech roles.
 
-- **April 17, 2016 is the all-time sales peak at 90,558 units**
+- **April 17, 2016 is the all-time sales peak at 90,558 units:**
+
 The day after a 7.8-magnitude earthquake hit Ecuador, nationwide panic buying drove sales to roughly 2× a normal Saturday. This is why Prophet's holiday events feature exists - the earthquake aftermath is explicitly modelled as a named 31-day event.
 
-- **SARIMA beats Prophet on the retail test window (8.8% vs 12.1% MAPE)**
+- **SARIMA beats Prophet on the retail test window (8.8% vs 12.1% MAPE):**
+
 The test period (June–August 2017) contains no major holidays. Prophet's main strength is modelling holiday effects - without events in the test window, SARIMA's autocorrelation structure wins. On a window spanning Christmas or the earthquake period, Prophet would likely recover. The lesson: model selection depends on what the forecast horizon contains, not just overall model capability.
 
-- **auto_arima selects ARIMA(0,1,1) on real TCS.NS data**
+- **auto_arima selects ARIMA(0,1,1) on real TCS.NS data:**
+
 Not the textbook ARIMA(0,1,0) pure random walk, but close. The MA(1) term detects a small short-lived autocorrelation in returns — consistent with weak-form market efficiency rather than strict EMH. Too small to exploit after transaction costs, but worth noting. The order varies by time window: a different date range may return (0,1,0), which is also valid.
 
 ---
@@ -126,33 +130,42 @@ Three tabs:
 
 ## Concepts covered
 
-- **Data engineering for time series**
-Raw data is 3M rows across 54 stores and 33 product families. Steps: filter to one store, `groupby('date')['sales'].sum()` to aggregate families, `reindex()` to create a continuous date range (required for `seasonal_decompose`), `fillna(0)` for days the store was closed. Using `usecols` on the read keeps memory reasonable.
+- **Data engineering for time series:**
 
-- **Time series decomposition**
+Raw data is 3M rows across 54 stores and 33 product families. 
+Steps: filter to one store, `groupby('date')['sales'].sum()` to aggregate families, `reindex()` to create a continuous date range (required for `seasonal_decompose`), `fillna(0)` for days the store was closed. Using `usecols` on the read keeps memory reasonable.
+
+- **Time series decomposition:**
+
 `seasonal_decompose(period=7)` splits the series into trend, weekly seasonality, and residuals using a centred moving average. Residuals should look like white noise - any remaining pattern means the decomposition hasn't fully captured the signal.
 
-- **Stationarity and ADF test**
-ADF test null hypothesis: the series has a unit root (non-stationary). Reject if p < 0.05. Retail sales pass with p = 0.034. Stock prices fail with p = 0.62 - the classic result for financial prices. Stock log-returns pass with p ≈ 0.
+- **Stationarity and ADF test:**
 
-- **ARIMA and SARIMA**
+ADF test null hypothesis: the series has a unit root (non-stationary).
+Reject if p < 0.05. Retail sales pass with p = 0.034. Stock prices fail with p = 0.62 - the classic result for financial prices. Stock log-returns pass with p ≈ 0.
+
+- **ARIMA and SARIMA:**
+
 `auto_arima` runs a stepwise AIC-minimising search. For retail, it finds SARIMA(3,1,0)(2,1,0,7) - seasonal terms with m=7 capturing weekly cycles. For stocks, it finds ARIMA(0,1,1) on real TCS data - near-random walk with a small MA(1) correction. `d=1` in both cases: first differencing removes the trend and achieves stationarity.
 
-- **Prophet holiday engineering**
+- **Prophet holiday engineering:**
+
 Raw `holidays_events.csv` has 350 rows. The correct approach: filter to the store's locale (National + Quito + Pichincha), drop `transferred=True` rows (those holidays were officially moved - use the Transfer-type row on the new date instead), and group all 31 earthquake aftermath days under one event name. Creating 31 separate dummy variables for 31 training examples would overfit.
 
-- **Model selection reasoning**
+- **Model selection reasoning:**
+
 SARIMA wins on retail despite Prophet having access to 178 real holiday events. The reason is the test window (June–August 2017) has no major holidays. This is documented in the notebook rather than glossed over — explaining why a model wins matters more than the number itself.
 
-- **Stock forecasting and EMH**
+- **Stock forecasting and EMH:**
+
 ARIMA(0,1,1) on TCS.NS is close to a pure random walk, consistent with the Efficient Market Hypothesis. Prophet adds marginal value via changepoint detection for trend regime shifts but doesn't dramatically outperform. Earnings announcement dates are added as Prophet events with a ±2 day window to capture pre-announcement drift and post-result digestion.
 
 ---
 
 ## Planned extensions
 
-- Oil price as Prophet external regressor via `add_regressor` - motivated by the r = −0.47 EDA finding
-- Multi-store forecasting across all 54 stores with performance breakdown by store type A–E
+- Oil price as Prophet external regressor via `add_regressor` - motivated by the r = -0.47 EDA finding
+- Multi-store forecasting across all 54 stores with performance breakdown by store type A-E
 - Walk-forward cross-validation instead of a single train/test split for more robust evaluation
 - GARCH model for stock volatility - complements Prophet's trend component
 
