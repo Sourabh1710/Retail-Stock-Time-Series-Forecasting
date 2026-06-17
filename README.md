@@ -3,7 +3,7 @@
 A dual-domain time series project - same methodology applied to real Kaggle retail sales data and NSE stock prices. Built to demonstrate technical depth and financial domain reasoning for Data Science roles in Finance and FinTech.
 
 ---
-[Live Demo]() &nbsp;
+[Streamlit App](https://sourabhsonker-retail-stock-time-series-forecasting.streamlit.app/) &nbsp;
 
 ---
 
